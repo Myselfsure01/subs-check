@@ -45,7 +45,7 @@
 
 ### 关闭测活 (alive-check)
 在 `config.yaml` 中设置：
-  alive-check: false
+alive-check: false
 
 ## 🛠️ 部署与使用 
 > 首次运行会在当前目录生成默认配置文件。
