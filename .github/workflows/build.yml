@@ -11,6 +11,35 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: Linux_x86_64
+          - goos: linux
+            goarch: "386"
+            suffix: Linux_i386
+          - goos: linux
+            goarch: arm
+            goarm: "7"
+            suffix: Linux_armv7
+          - goos: linux
+            goarch: arm64
+            suffix: Linux_aarch64
+          - goos: darwin
+            goarch: arm64
+            suffix: Darwin_aarch64
+          - goos: darwin
+            goarch: amd64
+            suffix: Darwin_x86_64
+          - goos: windows
+            goarch: amd64
+            suffix: Windows_x86_64
+          - goos: windows
+            goarch: arm64
+            suffix: Windows_aarch64
+
     steps:
       - name: Checkout upstream
         uses: actions/checkout@v4
@@ -19,12 +48,16 @@ jobs:
           ref: master
           fetch-depth: 0
 
-      - name: Get upstream commit info
-        id: upstream
+      - name: Get version info
+        id: version
         run: |
+          # 获取最新的版本 tag
+          TAG=$(git tag -l --sort=-creatordate | head -1)
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "date=$(git log -1 --format=%ci)" >> $GITHUB_OUTPUT
           echo "message=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
+          echo "Version: ${TAG} (${git rev-parse --short HEAD})"
 
       - name: Apply alive-check patch
         run: |
@@ -50,6 +83,11 @@ jobs:
             sed -i 's/slog.Info("当前参数", "timeout"/slog.Info("当前参数", "alive-check", config.GlobalConfig.AliveCheck, "timeout"/' check/check.go
           fi
 
+          # 5. config/config.example.yaml: 添加 alive-check 配置说明
+          if [ -f config/config.example.yaml ] && ! grep -q 'alive-check' config/config.example.yaml; then
+            sed -i '/alive-test-url/i\# 是否开启节点测活（连通性检测）\n# 关闭后所有节点将跳过测活阶段，直接进入流媒体检测/测速流程\n# 适用于已知订阅节点均可用、只想做测速或流媒体检测的场景\nalive-check: true' config/config.example.yaml
+          fi
+
           # 验证
           grep -q "AliveCheck" config/config.go || { echo "PATCH FAILED: config.go"; exit 1; }
           grep -q "GlobalConfig.AliveCheck" check/check.go || { echo "PATCH FAILED: check.go"; exit 1; }
@@ -60,26 +98,90 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build linux/amd64
+      - name: Build
         env:
           CGO_ENABLED: "0"
-          GOOS: linux
-          GOARCH: amd64
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
         run: |
-          go build -ldflags="-s -w -X main.Version=alive-check-${{ steps.upstream.outputs.sha }}" -o subs-check .
+          VERSION="${{ steps.version.outputs.tag }}-alive-check"
+          if [ "$GOOS" = "windows" ]; then
+            OUTPUT="subs-check.exe"
+          else
+            OUTPUT="subs-check"
+          fi
+          go build -ldflags="-s -w -X main.Version=${VERSION}" -o ${OUTPUT} .
+
+          # 打包
+          PKG_NAME="subs-check_${{ matrix.suffix }}"
+          if [ "$GOOS" = "windows" ]; then
+            zip "${PKG_NAME}.zip" ${OUTPUT}
+          else
+            tar -czf "${PKG_NAME}.tar.gz" ${OUTPUT}
+          fi
+          echo "PKG_NAME=${PKG_NAME}" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PKG_NAME }}
+          path: |
+            *.tar.gz
+            *.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout upstream (for version)
+        uses: actions/checkout@v4
+        with:
+          repository: beck-8/subs-check
+          ref: master
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          TAG=$(git tag -l --sort=-creatordate | head -1)
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(git log -1 --format=%ci)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.tar.gz *.zip > subs-check_${{ steps.version.outputs.tag }}-alive-check_checksums.txt
 
       - name: Create/Update Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: alive-check-latest
-          name: "subs-check alive-check (${{ steps.upstream.outputs.sha }})"
+          tag_name: ${{ steps.version.outputs.tag }}-alive-check
+          name: "${{ steps.version.outputs.tag }}-alive-check"
           body: |
-            基于上游最新代码自动编译，包含 alive-check 功能开关。
+            基于上游 ${{ steps.version.outputs.tag }} 自动编译，包含 alive-check 功能开关。
 
-            - 上游 Commit: `${{ steps.upstream.outputs.sha }}`
-            - 上游时间: ${{ steps.upstream.outputs.date }}
-            - 上游信息: ${{ steps.upstream.outputs.message }}
+            **上游信息:**
+            - Commit: `${{ steps.version.outputs.sha }}`
+            - 时间: ${{ steps.version.outputs.date }}
+            - 信息: ${{ steps.version.outputs.message }}
 
-            使用方法: config.yaml 中设置 `alive-check: false` 关闭测活
-          files: subs-check
+            **新增功能:**
+            在 config.yaml 中设置 `alive-check: false` 可关闭节点测活（连通性检测），
+            关闭后所有节点跳过测活阶段，直接进入流媒体检测/测速流程。
+            默认 `alive-check: true`，行为与原版一致。
+
+            **自动构建，每6小时检查上游更新。**
+          files: |
+            artifacts/*.tar.gz
+            artifacts/*.zip
+            artifacts/*checksums.txt
           make_latest: true
