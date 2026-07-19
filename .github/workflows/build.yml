@@ -1,0 +1,85 @@
+name: Build with alive-check patch
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout upstream
+        uses: actions/checkout@v4
+        with:
+          repository: beck-8/subs-check
+          ref: master
+          fetch-depth: 0
+
+      - name: Get upstream commit info
+        id: upstream
+        run: |
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(git log -1 --format=%ci)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
+
+      - name: Apply alive-check patch
+        run: |
+          # 1. config/config.go: 添加 AliveCheck 字段
+          if ! grep -q 'AliveCheck' config/config.go; then
+            sed -i '/AliveTestUrl.*yaml:"alive-test-url"/i\\tAliveCheck           bool      `yaml:"alive-check"`' config/config.go
+          fi
+
+          # 2. config/config.go: 添加默认值
+          if ! grep -q 'AliveCheck:.*true' config/config.go; then
+            sed -i '/AliveTestUrl:.*gstatic/i\\tAliveCheck:         true,' config/config.go
+          fi
+
+          # 3. check/check.go: 在 checkAlive 中插入跳过逻辑
+          if ! grep -q 'GlobalConfig.AliveCheck' check/check.go; then
+            sed -i '/func (pc \*ProxyChecker) checkAlive/,/httpClient := CreateClient(proxy)/{
+              /httpClient := CreateClient(proxy)/i\\n\t// 用户关闭测活功能时，直接视为存活\n\tif !config.GlobalConfig.AliveCheck {\n\t\treturn \&aliveResult{Proxy: proxy}\n\t}\n
+            }' check/check.go
+          fi
+
+          # 4. check/check.go: 日志添加 alive-check 参数
+          if ! grep -q '"alive-check"' check/check.go; then
+            sed -i 's/slog.Info("当前参数", "timeout"/slog.Info("当前参数", "alive-check", config.GlobalConfig.AliveCheck, "timeout"/' check/check.go
+          fi
+
+          # 验证
+          grep -q "AliveCheck" config/config.go || { echo "PATCH FAILED: config.go"; exit 1; }
+          grep -q "GlobalConfig.AliveCheck" check/check.go || { echo "PATCH FAILED: check.go"; exit 1; }
+          echo "Patch applied successfully"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build linux/amd64
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -ldflags="-s -w -X main.Version=alive-check-${{ steps.upstream.outputs.sha }}" -o subs-check .
+
+      - name: Create/Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: alive-check-latest
+          name: "subs-check alive-check (${{ steps.upstream.outputs.sha }})"
+          body: |
+            基于上游最新代码自动编译，包含 alive-check 功能开关。
+
+            - 上游 Commit: `${{ steps.upstream.outputs.sha }}`
+            - 上游时间: ${{ steps.upstream.outputs.date }}
+            - 上游信息: ${{ steps.upstream.outputs.message }}
+
+            使用方法: config.yaml 中设置 `alive-check: false` 关闭测活
+          files: subs-check
+          make_latest: true
