@@ -1,20 +1,19 @@
 <h1 align="center">🚀 订阅检测转换工具</h1>
 
 <p align="center">
-	<a href="https://github.com/beck-8/subs-check/releases"><img src="https://img.shields.io/github/v/release/beck-8/subs-check?style=flat-square&include_prereleases&label=version" /></a>
-	<a href="https://github.com/beck-8/subs-check/releases"><img src="https://img.shields.io/github/downloads/beck-8/subs-check/total.svg?style=flat-square" /></a>
-  <a href="https://hub.docker.com/r/beck8/subs-check/tags"><img src="https://img.shields.io/docker/pulls/beck8/subs-check" /></a>
-	<a href="https://github.com/beck-8/subs-check/issues"><img src="https://img.shields.io/github/issues-raw/beck-8/subs-check.svg?style=flat-square&label=issues" /></a>
-	<a href="https://github.com/beck-8/subs-check/graphs/contributors"><img src="https://img.shields.io/github/contributors/beck-8/subs-check?style=flat-square" /></a>
-	<a href="https://github.com/beck-8/subs-check/blob/master/LICENSE"><img src="https://img.shields.io/github/license/beck-8/subs-check?style=flat-square" /></a>
+	<a href="https://github.com/Myselfsure01/subs-check/releases"><img src="https://img.shields.io/github/v/release/Myselfsure01/subs-check?style=flat-square&include_prereleases&label=version" /></a>
+	<a href="https://github.com/Myselfsure01/subs-check/releases"><img src="https://img.shields.io/github/downloads/Myselfsure01/subs-check/total.svg?style=flat-square" /></a>
+	<a href="https://github.com/Myselfsure01/subs-check/issues"><img src="https://img.shields.io/github/issues-raw/Myselfsure01/subs-check.svg?style=flat-square&label=issues" /></a>
+	<a href="https://github.com/Myselfsure01/subs-check/graphs/contributors"><img src="https://img.shields.io/github/contributors/Myselfsure01/subs-check?style=flat-square" /></a>
+	<a href="https://github.com/Myselfsure01/subs-check/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Myselfsure01/subs-check?style=flat-square" /></a>
 </p>
 
 ---
 
 > **✨ 修复逻辑、简化操作、增加功能、节省内存、一键启动无需配置**
 
-> **⚠️ 注意：** 功能更新频繁，请查看最新的[配置文件](https://github.com/beck-8/subs-check/blob/master/config/config.example.yaml)以获取最新功能。  
-> **⚠️ 注意：** 如果想要查看功能更新，可以参照 [示例配置提交历史](https://github.com/beck-8/subs-check/commits/master/config/config.example.yaml),这里有变动说明有更功能/逻辑更新
+> **⚠️ 注意：** 功能更新频繁，请查看最新的[配置文件](https://github.com/Myselfsure01/subs-check/blob/master/config/config.example.yaml)以获取最新功能。  
+> **⚠️ 注意：** 如果想要查看功能更新，可以参照 [示例配置提交历史](https://github.com/Myselfsure01/subs-check/commits/master/config/config.example.yaml),这里有变动说明有更功能/逻辑更新
 
 ## 📸 预览
 
@@ -196,7 +195,7 @@ services:
 ```
 ### 📦 二进制文件运行
 
-下载 [Releases](https://github.com/beck-8/subs-check/releases) 中适合的版本，解压后直接运行即可。
+下载 [Releases](https://github.com/Myselfsure01/subs-check/releases) 中适合的版本，解压后直接运行即可。
 
 ### 🖥️ 源码运行
 
@@ -353,7 +352,7 @@ graph TD
 
 ## ⭐ Star History
 
-[![Stargazers over time](https://starchart.cc/beck-8/subs-check.svg?variant=adaptive)](https://starchart.cc/beck-8/subs-check)
+[![Stargazers over time](https://starchart.cc/Myselfsure01/subs-check.svg?variant=adaptive)](https://starchart.cc/Myselfsure01/subs-check)
 
 ## ⚖️ 免责声明
 
