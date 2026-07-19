@@ -30,6 +30,10 @@ success-limit: 0
 
 # 超时时间(毫秒)(节点的最大延迟)
 timeout: 5000
+# 是否开启节点测活（连通性检测）
+# 关闭后所有节点将跳过测活阶段，直接进入流媒体检测/测速流程
+# 适用于已知订阅节点均可用、只想做测速或流媒体检测的场景
+alive-check: true
 # 延迟测试URL
 # 一些高级用法需要自己摸索，比如想要拒绝某些CF类节点，可将url替换为https://www.cloudflare.com
 alive-test-url: http://gstatic.com/generate_204
