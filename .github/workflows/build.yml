@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - goos: linux
@@ -57,7 +58,7 @@ jobs:
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "date=$(git log -1 --format=%ci)" >> $GITHUB_OUTPUT
           echo "message=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
-          echo "Version: ${TAG} (${git rev-parse --short HEAD})"
+          echo "Version: ${TAG} ($(git rev-parse --short HEAD))"
 
       - name: Apply alive-check patch
         run: |
