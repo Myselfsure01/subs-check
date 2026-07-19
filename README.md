@@ -41,6 +41,12 @@
 - **⏰ 支持 Crontab 表达式**
 - **🖥️ 多平台支持**
 
+## 自定义功能（本 fork 新增）
+
+### 关闭测活 (alive-check)
+在 `config.yaml` 中设置：
+alive-check: false
+
 ## 🛠️ 部署与使用 
 > 首次运行会在当前目录生成默认配置文件。
 
@@ -48,7 +54,7 @@
 
 ```bash
 # 默认安装
-bash <(curl -fsSL https://raw.githubusercontent.com/beck-8/subs-check/master/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/Myselfsure01/subs-check/master/install.sh)
 
 # 使用 wget
 bash <(wget -qO- https://raw.githubusercontent.com/beck-8/subs-check/master/install.sh)
